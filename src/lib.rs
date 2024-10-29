@@ -3,8 +3,11 @@
 
 // Find all our documentation at https://docs.near.org
 use near_sdk::{env, log, near, AccountId};
+use near_sdk_contract_tools::ft::*;
+use std::borrow::Cow;
 
 // Define the contract structure
+#[derive(Default, FungibleToken)]
 #[near(contract_state)]
 pub struct Contract {
     counter: u64,
@@ -12,18 +15,28 @@ pub struct Contract {
 }
 
 // Define the default, which automatically initializes the contract
-impl Default for Contract {
-    fn default() -> Self {
-        Self {
-            counter: 0,
-            salt: 12345,
-        }
-    }
-}
+// impl Default for Contract {
+//     fn default() -> Self {
+//         Self {
+//             counter: 0,
+//             salt: 12345,
+//         }
+//     }
+// }
 
 // Implement the contract structure
 #[near]
 impl Contract {
+    #[init]
+    pub fn new() -> Self {
+        let mut contract = Self {
+            counter: 0,
+            salt: 12345,
+        };
+        contract.set_metadata(&ContractMetadata::new("Stratum", "STR", 0));
+
+        contract
+    }
     pub fn get_salt(&self) -> u64 {
         self.salt
     }
@@ -42,15 +55,23 @@ impl Contract {
     }
 
     pub fn submit_proof(&mut self, proof: Vec<u8>) -> bool {
-        let miner = env::signer_account_id(); // Get the wallet ID of the caller
-                                              // Compare submitted proof with calculated proof
-
+        let miner = env::signer_account_id();
         let expected_proof = self.calculate_proof_v2();
         env::log_str(&format!("Expected proof {:?}", expected_proof));
 
         if proof == expected_proof {
             self.counter += 1; // Increment the counter for the next challenge
             env::log_str(&format!("Proof validated for miner: {}", miner));
+
+            self.storage_deposit(Some(miner.clone()), Some(true));
+
+            self.mint(&Nep141Mint {
+                amount: 1,
+                receiver_id: Cow::Borrowed(&miner),
+                memo: None,
+            })
+            .unwrap();
+
             true
         } else {
             env::log_str("Proof validation failed.");
