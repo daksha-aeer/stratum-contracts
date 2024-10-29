@@ -1,3 +1,22 @@
+# Commands
+
+```sh
+# Create account
+near create-account hello-test-1.testnet --useFaucet
+
+# Build
+cargo near build
+
+# Deploy
+near deploy hello-test-1.testnet ./target/near/str_test.wasm
+
+# View
+near view hello-test-1.testnet get_greeting
+
+# Call (mutate)
+near call hello-test-1.testnet set_greeting '{"greeting": "Hola"}' --accountId hello-test-1.testnet
+```
+
 # str-test
 
 cargo-near-new-project-description
