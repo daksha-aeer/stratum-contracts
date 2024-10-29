@@ -1,17 +1,23 @@
+use std::fmt::format;
+use sha3::{Digest, Keccak256};
+
+
 // Find all our documentation at https://docs.near.org
-use near_sdk::{log, near};
+use near_sdk::{log, near, env, AccountId};
 
 // Define the contract structure
 #[near(contract_state)]
 pub struct Contract {
-    greeting: String,
+    counter: u64,
+    salt: u64,
 }
 
 // Define the default, which automatically initializes the contract
 impl Default for Contract {
     fn default() -> Self {
         Self {
-            greeting: "Hello".to_string(),
+            counter: 0,
+            salt: 12345
         }
     }
 }
@@ -19,15 +25,30 @@ impl Default for Contract {
 // Implement the contract structure
 #[near]
 impl Contract {
-    // Public method - returns the greeting saved, defaulting to DEFAULT_GREETING
-    pub fn get_greeting(&self) -> String {
-        self.greeting.clone()
+    pub fn get_salt(&self) -> u64 {
+        self.salt
     }
 
-    // Public method - accepts a greeting, such as "howdy", and records it
-    pub fn set_greeting(&mut self, greeting: String) {
-        log!("Saving greeting: {greeting}");
-        self.greeting = greeting;
+    pub fn get_counter(&self) -> u64 {
+        self.counter
+    }
+
+    fn calculate_proof(&self) -> Vec<u8> {
+        let input = format!("{}{}", self.counter, self.salt);
+        Keccak256::digest(input.as_bytes()).to_vec()
+    }
+
+    pub fn submit_proof(&mut self, proof: Vec<u8>) -> bool {
+        let miner = env::signer_account_id(); // Get the wallet ID of the caller
+        // Compare submitted proof with calculated proof
+        if proof == self.calculate_proof() {
+            self.counter += 1; // Increment the counter for the next challenge
+            env::log_str(&format!("Proof validated for miner: {}", miner));
+            true
+        } else {
+            env::log_str("Proof validation failed.");
+            false
+        }
     }
 }
 
@@ -38,18 +59,4 @@ impl Contract {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn get_default_greeting() {
-        let contract = Contract::default();
-        // this test did not call set_greeting so should return the default "Hello" greeting
-        assert_eq!(contract.get_greeting(), "Hello");
-    }
-
-    #[test]
-    fn set_then_get_greeting() {
-        let mut contract = Contract::default();
-        contract.set_greeting("howdy".to_string());
-        assert_eq!(contract.get_greeting(), "howdy");
-    }
 }
