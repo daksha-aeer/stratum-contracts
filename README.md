@@ -1,20 +1,22 @@
 # Commands
 
 ```sh
-# Create account
-near create-account hello-test-1.testnet --useFaucet
-
 # Build
-cargo near build
+cargo near build --no-docker
+
+# Create account
+near create-account stratum-miner-v1.testnet --useFaucet
 
 # Deploy
-near deploy hello-test-1.testnet ./target/near/str_test.wasm
+near deploy stratum-miner-v1.testnet ./target/near/str_test.wasm
 
 # View
-near view hello-test-1.testnet get_greeting
+near view stratum-miner-v1.testnet get_counter
+
+# Calculate hash using cargo test
 
 # Call (mutate)
-near call hello-test-1.testnet set_greeting '{"greeting": "Hola"}' --accountId hello-test-1.testnet
+near call stratum-miner-v1.testnet submit_proof '{"proof": [1, 27, 77, 3, 221, 140, 1, 241, 4, 145, 67, 207, 156, 76, 129, 126, 75, 22, 127, 29, 27, 131, 229, 198, 240, 241, 13, 137, 186, 30, 123, 206]}'  --accountId stratum-miner-v1.testnet
 ```
 
 # str-test

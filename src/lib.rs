@@ -1,9 +1,8 @@
-use std::fmt::format;
-use sha3::{Digest, Keccak256};
-
+// use sha3::{Digest, Keccak256};
+// use std::fmt::format;
 
 // Find all our documentation at https://docs.near.org
-use near_sdk::{log, near, env, AccountId};
+use near_sdk::{env, log, near, AccountId};
 
 // Define the contract structure
 #[near(contract_state)]
@@ -17,7 +16,7 @@ impl Default for Contract {
     fn default() -> Self {
         Self {
             counter: 0,
-            salt: 12345
+            salt: 12345,
         }
     }
 }
@@ -33,15 +32,23 @@ impl Contract {
         self.counter
     }
 
-    fn calculate_proof(&self) -> Vec<u8> {
-        let input = format!("{}{}", self.counter, self.salt);
-        Keccak256::digest(input.as_bytes()).to_vec()
+    // fn calculate_proof(&self) -> Vec<u8> {
+    //     let input = format!("{}{}", self.counter, self.salt);
+    //     Keccak256::digest(input.as_bytes()).to_vec()
+    // }
+
+    fn calculate_proof_v2(&self) -> Vec<u8> {
+        env::keccak256(&self.counter.to_le_bytes())
     }
 
     pub fn submit_proof(&mut self, proof: Vec<u8>) -> bool {
         let miner = env::signer_account_id(); // Get the wallet ID of the caller
-        // Compare submitted proof with calculated proof
-        if proof == self.calculate_proof() {
+                                              // Compare submitted proof with calculated proof
+
+        let expected_proof = self.calculate_proof_v2();
+        env::log_str(&format!("Expected proof {:?}", expected_proof));
+
+        if proof == expected_proof {
             self.counter += 1; // Increment the counter for the next challenge
             env::log_str(&format!("Proof validated for miner: {}", miner));
             true
@@ -59,4 +66,13 @@ impl Contract {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sha3::{Digest, Keccak256};
+
+    #[test]
+    fn get_hash() {
+        let counter: u64 = 0;
+
+        let hash = Keccak256::digest(counter.to_le_bytes()).to_vec();
+        println!("hash {:?}", hash);
+    }
 }
