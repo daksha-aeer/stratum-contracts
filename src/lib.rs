@@ -63,8 +63,6 @@ impl Contract {
             self.counter += 1; // Increment the counter for the next challenge
             env::log_str(&format!("Proof validated for miner: {}", miner));
 
-            self.storage_deposit(Some(miner.clone()), Some(true));
-
             self.mint(&Nep141Mint {
                 amount: 1,
                 receiver_id: Cow::Borrowed(&miner),
@@ -91,7 +89,7 @@ mod tests {
 
     #[test]
     fn get_hash() {
-        let counter: u64 = 0;
+        let counter: u64 = 2;
 
         let hash = Keccak256::digest(counter.to_le_bytes()).to_vec();
         println!("hash {:?}", hash);
